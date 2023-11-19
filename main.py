@@ -43,6 +43,13 @@ class Table:
         new_d = self.data.copy() if copy_table else deepcopy(self.data)
         stop = stop if stop else len(new_d)
         return [new_d[i] for i in range(start, stop)]
+    def get_rows_by_index(self, *args, copy_table=False):
+        new_d = self.data.copy() if copy_table else deepcopy(self.data)
+        res = []
+        for lst in new_d:
+            if lst[self.header[0]] in args:
+                res.append(lst)
+        return res
     def get_column_types(self, by_number=True):
         res = {}
         for i in range(len(self.header)):
@@ -51,15 +58,3 @@ class Table:
             else:
                 res[self.header[i]] = type(self.data[0][self.header[i]])
         return res
-
-
-
-
-
-
-    def get_rows_by_index(self, *args, copy_table=False):
-        new_d = self.data.copy() if copy_table else deepcopy(self.data)
-        res = {}
-        val = args
-
-
