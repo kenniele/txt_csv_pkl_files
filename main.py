@@ -7,49 +7,67 @@ class Table:
         self.filename = ""
         self.data = []
         self.header = []
-    def load_table(self, filename):
-        self.filename = filename
-        self.data = []
-        if self.filename.endswith(".txt"):
-            with open(self.filename, encoding="utf-8") as f:
-                self.header = f.readline().split()
-                temp = [x.split() for x in f]
-                for row in temp:
-                    self.data.append({})
-                    for pair in zip(self.header, row):
-                        self.data.update({pair[0]: pair[1]})
-        elif self.filename.endswith(".csv"):
-            with open(self.filename, encoding="utf-8") as f:
-                temp = csv.DictReader(f, quotechar='"')
-        elif self.filename.endswith(".pkl"):
-            with open(self.filename, 'rb') as f:
-                self.data = pickle.load(f)
-                self.header = list(self.data.keys())
-        else:
-            raise ValueError("Недоступное расширение!")
-    def save_table(self, new_filename):
-        if new_filename.endswith(".txt"):
-            with open(new_filename, 'w', encoding='utf-8') as f:
-                f.write('\t'.join(self.data[0].keys()))
-                for row in self.data:
-                    f.write('\t'.join(row.values()))
-        elif new_filename.endswith(".csv"):
-            with open(new_filename, 'w', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                writer.writerow(self.header)
-                for row in self.data:
-                    writer.writerow(row.values())
+    def load_table(self, *filenames):
+        try:
+            for filename in filenames:
+                self.filename = filename
+                self.data = []
+                if self.filename.endswith(".txt"):
+                    with open(self.filename, encoding="utf-8") as f:
+                        self.header = f.readline().split()
+                        temp = [x.split() for x in f]
+                        for row in temp:
+                            self.data.append({})
+                            for pair in zip(self.header, row):
+                                self.data.update({pair[0]: pair[1]})
+                elif self.filename.endswith(".csv"):
+                    with open(self.filename, encoding="utf-8") as f:
+                        temp = csv.DictReader(f, quotechar='"')
+                elif self.filename.endswith(".pkl"):
+                    with open(self.filename, 'rb') as f:
+                        self.data = pickle.load(f)
+                        self.header = list(self.data.keys())
+                else:
+                    raise AttributeError("Недоступное расширение!")
+        except:
+            raise KeyError("Несовместимые имена таблицы!")
+        def save_table(self, new_filename, max_rows=float("inf")):
+            cur = 0
+            filecount = 0
+            while cur <= max_rows:
+                if new_filename.endswith(".txt"):
+                    with open(new_filename, 'w', encoding='utf-8') as f:
+                        f.write('\t'.join(self.data[0].keys()))
+                        for row in self.data:
+                            f.write('\t'.join(row.values()))
+                elif new_filename.endswith(".csv"):
+                    with open(new_filename, 'w', encoding='utf-8') as f:
+                        writer = csv.writer(f)
+                        writer.writerow(self.header)
+                        for row in self.data:
+                            writer.writerow(row.values())
+                elif new_filename.endswith(".pkl"):
+                    with open(new_filename, "wb") as f:
+                        pickle.dump(self.data, f)
+                else:
+                    raise AttributeError("Недоступное расширение!")
     def get_rows_by_number(self, start, stop=None, copy_table=False):
-        new_d = self.data.copy() if copy_table else deepcopy(self.data)
-        stop = stop if stop else len(new_d)
-        return [new_d[i] for i in range(start, stop)]
+        try:
+            new_d = self.data.copy() if copy_table else deepcopy(self.data)
+            stop = stop if stop else len(new_d)
+            return [new_d[i] for i in range(start, stop)]
+        except:
+            raise ValueError("Произошла непредвиденная ошибка при получении данных из файла")
     def get_rows_by_index(self, *args, copy_table=False):
-        new_d = self.data.copy() if copy_table else deepcopy(self.data)
-        res = []
-        for lst in new_d:
-            if lst[self.header[0]] in args:
-                res.append(lst)
-        return res
+        try:
+            new_d = self.data.copy() if copy_table else deepcopy(self.data)
+            res = []
+            for lst in new_d:
+                if lst[self.header[0]] in args:
+                    res.append(lst)
+            return res
+        except:
+            raise ValueError("Произошла непредвиденная ошибка при получении данных из файла")
     def get_column_types(self, by_number=True):
         res = {}
         for i in range(len(self.header)):
@@ -72,3 +90,24 @@ class Table:
         for lst in self.data:
             for i in len(self.header):
                 exec(f"lst[self.header[i]] = {types_dict[[self.header[i], i][by_number]]}(lst[self.header[i]])")
+    def get_values(self, column=0):
+        if isinstance(column, int):
+            column = list(self.data.keys())[column]
+        return [self.data[i][column] for i in range(len(self.data))]
+    def get_value(self, column=0):
+        if isinstance(column, int):
+            column = list(self.data.keys())[column]
+        return self.data[0][column]
+    def set_values(self, values, column=0):
+        if isinstance(column, int):
+            column = list(self.data.keys())[column]
+        for i in range(len(self.data)):
+            self.data[i][column] = values[i % len(self.data)]
+    def set_value(self, value, column=0):
+        if isinstance(column, int):
+            column = list(self.data.keys())[column]
+        self.data[0][column] = value
+    def print_table(self):
+        print(*list(self.data.keys()), sep=" ")
+        for i in range(len(self.data)):
+            print(*list(self.data[i].values()), sep=" ")
