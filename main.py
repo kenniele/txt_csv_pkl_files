@@ -3,6 +3,10 @@ import pickle
 import functools
 from copy import deepcopy
 class Table:
+    @functools.singledispatchmethod
+    def __init__(self, data=[]):
+        raise TypeError("Введенные данные не являются строкой")
+    @__init__.register(str)
     def __init__(self, data=[]):
         self.filename = ""
         self.data = []
