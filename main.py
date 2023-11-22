@@ -53,8 +53,22 @@ class Table:
     def get_column_types(self, by_number=True):
         res = {}
         for i in range(len(self.header)):
+            try:
+                tpy = ''
+                if self.data[0][self.header[i]] in ('True', 'False', 'true', 'false'):
+                    tpy = 'bool'
+                elif str(int(self.data[0][self.header[i]])) == self.data[0][self.header[i]]:
+                    tpy = 'int'
+                elif str(float(self.data[0][self.header[i]])) == self.data[0][self.header[i]]:
+                    tpy = 'float'
+            except ValueError:
+                tpy = 'str'
             if by_number:
-                res[i] = type(self.data[0][self.header[i]])
+                res[i] = tpy
             else:
-                res[self.header[i]] = type(self.data[0][self.header[i]])
+                res[self.header[i]] = tpy
         return res
+    def set_column_types(self, types_dict, by_number=True):
+        for lst in self.data:
+            for i in len(self.header):
+                exec(f"lst[self.header[i]] = {types_dict[[self.header[i], i][by_number]]}(lst[self.header[i]])")
