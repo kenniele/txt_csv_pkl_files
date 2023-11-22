@@ -3,10 +3,11 @@ import pickle
 import functools
 from copy import deepcopy
 class Table:
-    def __init__(self):
+    def __init__(self, data=[]):
         self.filename = ""
         self.data = []
         self.header = []
+        self.column_types = {}
     def load_table(self, *filenames):
         try:
             for filename in filenames:
@@ -29,28 +30,41 @@ class Table:
                         self.header = list(self.data.keys())
                 else:
                     raise AttributeError("Недоступное расширение!")
+            self.column_types = self.get_column_types(by_number=False)
         except:
             raise KeyError("Несовместимые имена таблицы!")
-        def save_table(self, new_filename, max_rows=float("inf")):
-            cur = 0
-            filecount = 0
-            while cur <= max_rows:
-                if new_filename.endswith(".txt"):
-                    with open(new_filename, 'w', encoding='utf-8') as f:
-                        f.write('\t'.join(self.data[0].keys()))
-                        for row in self.data:
-                            f.write('\t'.join(row.values()))
-                elif new_filename.endswith(".csv"):
-                    with open(new_filename, 'w', encoding='utf-8') as f:
-                        writer = csv.writer(f)
-                        writer.writerow(self.header)
-                        for row in self.data:
-                            writer.writerow(row.values())
-                elif new_filename.endswith(".pkl"):
-                    with open(new_filename, "wb") as f:
-                        pickle.dump(self.data, f)
-                else:
-                    raise AttributeError("Недоступное расширение!")
+        def save_table(self, new_filename):
+            if new_filename.endswith(".txt"):
+                with open(new_filename, 'w', encoding='utf-8') as f:
+                    f.write('\t'.join(self.data[0].keys()))
+                    for row in self.data:
+                        f.write('\t'.join(row.values()))
+            elif new_filename.endswith(".csv"):
+                with open(new_filename, 'w', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(self.header)
+                    for row in self.data:
+                        writer.writerow(row.values())
+            elif new_filename.endswith(".pkl"):
+                with open(new_filename, "wb") as f:
+                    pickle.dump(self.data, f)
+            else:
+                raise AttributeError("Недоступное расширение!")
+    @staticmethod
+    def concat(table1, table2):
+        if isinstance(table1, Table) and isinstance(table2, Table):
+            for x in table2.data:
+                table1.data.append(x)
+        else:
+            raise TypeError("Один из элементов не является таблицей!")
+    def split(self, row_number):
+        other = Table()
+        if row_number < len(self.data):
+            for i in range(row_number, len(self.data)):
+                other.data.append(self.data[i])
+            self.data = self.data[:row_number]
+            return self, other
+        raise ValueError("Некорректный номер строки!")
     def get_rows_by_number(self, start, stop=None, copy_table=False):
         try:
             new_d = self.data.copy() if copy_table else deepcopy(self.data)
@@ -111,3 +125,12 @@ class Table:
         print(*list(self.data.keys()), sep=" ")
         for i in range(len(self.data)):
             print(*list(self.data[i].values()), sep=" ")
+    @staticmethod
+    def merge_tables(table1, table2, by_number=True):
+        if isinstance(table1, Table) and isinstance(table2, Table):
+            eq_col = list(table1.data.keys()) == list(table2.data.keys())
+            if eq_col:
+                for x in table2.data:
+                    table1.data.append(x)
+            raise KeyError("Столбцы не равны или расположены в неправильном порядке!")
+        raise TypeError("Один из элементов не является таблицей!")
